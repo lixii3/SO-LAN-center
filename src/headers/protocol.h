@@ -1,18 +1,43 @@
 #ifndef PROTOCOL_H
 #define PROTOCOL_H
 
+// --- ICP ---
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
 // rete
 #define SERVER_PORT		1234
 #define SERVER_ADDRESS	"127.0.0.1"
-#define MAX_LINE		256
 
 // limiti dei campi
-#define MAX_USERNAME	32
-#define MAX_PASSWORD	32
-#define MAX_STATION		16
-#define DATE_LEN		11 // GG-MM-AA
-#define TIME_LEN		6 // HH:MM
+enum	e_limits
+{
+	MAX_LINE = 256, // max len linea di comando
+	MAX_USERNAME = 32, // max len username
+	MAX_PASSWORD = 32, // max len password
+	MAX_STATION	 = 16, //max len id postazione
+	DATE_LEN = 11, // GG-MM-AA
+	TIME_LEN = 6, // HH:MIN
+	OPENING_H = 10, //ora di apertura
+	CLOSING_H = 24, //ora di chiusura
+};
 
+// scaglioni orari permessi
+enum e_booking_minutes
+{
+	THIRTY = 30,
+	ZERO = 0
+};
+
+// stati prenotazione
+enum e_status
+{
+	STATUS_PENDING = 'P',
+	STATUS_APPROVED = 'A',
+	STATUS_REJECTED = 'R'
+};
 
 // ruoli
 #define ROLE_USER "USER"
@@ -37,11 +62,6 @@
 #define RESP_OK		"OK"
 #define RESP_ERR	"ERR"
 #define RESP_BYE	"BYE"
-
-// stati prenotazione
-#define STATUS_PENDING		"PENDING"
-#define STATUS_APPROVED		"APPROVED"
-#define STATUS_REJECTED		"REJECTED"
 
 // codici di errore
 #define ERR_UNKNOWN_COMMAND		"UNKNOWN_COMMAND"

@@ -12,7 +12,7 @@ SRC_DIR = src
 OBJ_DIR = .obj
 
 # file in comune
-COM_SRC = net.c
+COM_SRC = net.c time.c booking.c
 
 # file esclusivi
 SRV_SRC = server.c

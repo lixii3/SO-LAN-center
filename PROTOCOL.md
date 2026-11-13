@@ -39,7 +39,7 @@ ERR <CODICE> [messaggio]
 
 | Dato        | Formato        | Esempio      | Note |
 |-------------|----------------|--------------|------|
-| data        | `AAAA-MM-GG`   | `2026-12-20` | il formato permette di confrontare le date con `strcmp` |
+| data        | `GG-MM-AAAA`   | `20-12-2026` | il formato permette di confrontare le date con `strcmp` |
 | ora         | `HH:MM`        | `18:30`      | minuti solo `00` o `30`; `24:00` = mezzanotte (solo come ora di fine) |
 | postazione  | `TIPO-NN`      | `PC-03`      | tipi: `PC`, `PS5`, `XBOX`, `SWITCH` |
 | stato       | parola         | `PENDING`    | `PENDING`, `APPROVED`, `REJECTED` |

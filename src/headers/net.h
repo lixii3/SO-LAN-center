@@ -1,19 +1,6 @@
 #ifndef NET_H
 #define NET_H
-
-// --- ICP ---
 #include "./protocol.h"
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-
-// --- utils ---
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-#include <fcntl.h>
 
 #define NET_CLOSED -1
 #define NET_ERROR -2
