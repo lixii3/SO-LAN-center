@@ -1,4 +1,5 @@
 #include "../headers/net.h"
+#include "../headers/utils.h"
 
 int	recv_line(int fd, char *line, size_t size)
 {
@@ -31,22 +32,6 @@ int	recv_line(int fd, char *line, size_t size)
 	return ((int)i);
 }
 
-
-static int	write_all(int fd, const char *buf, size_t len)
-{
-	size_t	sent;
-	ssize_t	w;
-
-	sent = 0;
-	while (sent < len)
-	{
-		w = write(fd, buf + sent, len - sent);
-		if (w < 0)
-			return (NET_ERROR);
-		sent += w;
-	}
-	return (sent);
-}
 
 int	send_line(int fd, const char *line)
 {

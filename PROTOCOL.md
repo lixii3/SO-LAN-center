@@ -39,7 +39,7 @@ ERR <CODICE> [messaggio]
 
 | Dato        | Formato        | Esempio      | Note |
 |-------------|----------------|--------------|------|
-| data        | `GG-MM-AAAA`   | `20-12-2026` | il formato permette di confrontare le date con `strcmp` |
+| data        | `GG-MM-AAAA`   | `20-12-2026` | le date si confrontano convertendole in `t_date` (non con `strcmp`, che metterebbe il 20-12-2026 dopo l'01-01-2027) |
 | ora         | `HH:MM`        | `18:30`      | minuti solo `00` o `30`; `24:00` = mezzanotte (solo come ora di fine) |
 | postazione  | `TIPO-NN`      | `PC-03`      | tipi: `PC`, `PS5`, `XBOX`, `SWITCH` |
 | stato       | parola         | `PENDING`    | `PENDING`, `APPROVED`, `REJECTED` |
@@ -61,7 +61,7 @@ ERR <CODICE> [messaggio]
 ```
 BOOKING <id> <postazione> <data> <inizio> <fine> <utente> <stato>
 ```
-Esempio: `BOOKING 17 PC-03 2026-12-20 18:00 21:00 mario PENDING`
+Esempio: `BOOKING 17 PC-03 20-12-2026 18:00 21:00 mario PENDING`
 
 ---
 
@@ -123,7 +123,7 @@ Crea una nuova richiesta di prenotazione, che parte nello stato `PENDING`.
 | `OK <id> PENDING` | richiesta registrata |
 | `ERR SYNTAX` | parametri mancanti o in formato errato |
 | `ERR NO_SUCH_STATION` | la postazione non esiste |
-| `ERR INVALID_DATE` | data inesistente (es. `2026-02-30`) o nel passato |
+| `ERR INVALID_DATE` | data inesistente (es. `30-02-2026`) o nel passato |
 | `ERR INVALID_TIME` | ora non valida, fuori orario, `fine <= inizio`, durata non ammessa |
 | `ERR CONFLICT <id>` | si sovrappone alla prenotazione **APPROVED** `<id>` |
 
@@ -145,14 +145,14 @@ I filtri hanno la forma `chiave=valore` e si possono combinare (condizione AND):
 |--------|---------|
 | `id=` | `id=17` |
 | `station=` | `station=PC-03` |
-| `date=` | `date=2026-12-20` |
+| `date=` | `date=20-12-2026` |
 | `status=` | `status=PENDING` |
 
 ```
-C: MY date=2026-12-20
+C: MY date=20-12-2026
 S: OK 2
-S: BOOKING 17 PC-03 2026-12-20 18:00 21:00 mario PENDING
-S: BOOKING 21 PS5-1 2026-12-20 21:00 22:00 mario APPROVED
+S: BOOKING 17 PC-03 20-12-2026 18:00 21:00 mario PENDING
+S: BOOKING 21 PS5-1 20-12-2026 21:00 22:00 mario APPROVED
 ```
 
 Errori: `ERR SYNTAX` (filtro scritto male o chiave sconosciuta).
@@ -175,8 +175,8 @@ Come `MY`, ma su **tutte** le prenotazioni. Accetta anche il filtro `user=`.
 ```
 C: ALL status=PENDING
 S: OK 2
-S: BOOKING 17 PC-03 2026-12-20 18:00 21:00 mario PENDING
-S: BOOKING 18 PC-03 2026-12-20 20:00 22:00 luigi PENDING
+S: BOOKING 17 PC-03 20-12-2026 18:00 21:00 mario PENDING
+S: BOOKING 18 PC-03 20-12-2026 20:00 22:00 luigi PENDING
 ```
 
 ### `APPROVE <id>`
@@ -258,13 +258,13 @@ e `APPROVE` o `REJECT` per risolvere il conflitto.
 ## 6. Sessione di esempio completa
 
 ```
-C: BOOK PC-03 2026-12-20 18:00 21:00
+C: BOOK PC-03 20-12-2026 18:00 21:00
 S: ERR NOT_LOGGED
 C: LOGIN mario pw123
 S: OK USER
-C: BOOK PC-03 2026-12-20 18:00 21:00
+C: BOOK PC-03 20-12-2026 18:00 21:00
 S: OK 17 PENDING
-C: BOOK PC-03 2026-12-20 19:00 25:00
+C: BOOK PC-03 20-12-2026 19:00 25:00
 S: ERR INVALID_TIME
 C: ALL
 S: ERR UNAUTHORIZED

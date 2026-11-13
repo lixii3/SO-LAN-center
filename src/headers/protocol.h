@@ -18,8 +18,8 @@ enum	e_limits
 	MAX_USERNAME = 32, // max len username
 	MAX_PASSWORD = 32, // max len password
 	MAX_STATION	 = 16, //max len id postazione
-	DATE_LEN = 11, // GG-MM-AA
-	TIME_LEN = 6, // HH:MIN
+	DATE_LEN = 11, // GG-MM-AAAA (10 caratteri + '\0')
+	TIME_LEN = 6, // HH:MM (5 caratteri + '\0')
 	OPENING_H = 10, //ora di apertura
 	CLOSING_H = 24, //ora di chiusura
 };

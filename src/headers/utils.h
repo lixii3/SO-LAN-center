@@ -1,8 +1,17 @@
+#ifndef UTILS_H
+#define UTILS_H
+
 // --- utils ---
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/types.h>
+#include <limits.h>
 
+int		write_all(int fd, const char *buf, size_t len);
+char	*read_all(int fd, size_t *len);
+int		split_fields(char *str, char sep, char **fields, int max_fields);
+int		str_to_int(const char *str, int *out);
 
-void pad_left(char *str, size_t target_len, char fill_char);
+#endif

@@ -1,6 +1,7 @@
 #include "../headers/structs.h"
 #include "../headers/utils.h"
 #include <time.h>
+#include <ctype.h>
 
 // inizializza e ritorna un s_time, validando in automatico i dati
 t_time	*init_time(int h, int min)
@@ -9,12 +10,19 @@ t_time	*init_time(int h, int min)
 
 	if (!((h <= 23 && h >= 0) && (min < 60 && min >= 0)))
 		return (NULL);
-	time = calloc(sizeof(t_time), 1);
+	time = calloc(1, sizeof(t_time));
 	if (!time)
 		return (NULL);
 	time->h = h;
 	time->min = min;
 	return (time);
+}
+
+// converte un orario in minuti dalla mezzanotte (18:30 -> 1110):
+// semplifica il confronto tra orari
+int	time_to_min(const t_time *time)
+{
+	return (time->h * 60 + time->min);
 }
 
 // ritorna 0 se time supera il limite dato (o se time è null), 1 altrimenti
@@ -33,16 +41,13 @@ void	free_time(t_time *time)
 	free(time);
 }
 
-// restituisce il tempo in formato HH:MIN
-char	*time_to_str(t_time *time)
+// scrive in buf (almeno TIME_LEN byte) il tempo in formato HH:MM e ritorna buf
+char	*time_to_str(const t_time *time, char *buf)
 {
-	char	*str;
-
-	if (!time || !str)
+	if (!time)
 		return (NULL);
-	str = calloc(sizeof(char), TIME_LEN);
-	snprintf(str, TIME_LEN, "%02d:%02d", time->h, time->min);
-	return str;
+	snprintf(buf, TIME_LEN, "%02d:%02d", time->h, time->min);
+	return buf;
 }
 
 
@@ -67,7 +72,7 @@ t_date	*init_date(int g, int m, int a)
 {
 	t_date	*date;
 	
-	date = calloc(sizeof(t_date), 1);
+	date = calloc(1, sizeof(t_date));
 	if (!date)
 		return (NULL);
 	date->g = g;
@@ -79,15 +84,76 @@ t_date	*init_date(int g, int m, int a)
 	return (NULL);
 }
 
-char	*date_to_str(t_date *date)
+// scrive in buf (almeno DATE_LEN byte) la data in formato GG-MM-AAAA e ritorna buf
+char	*date_to_str(const t_date *date, char *buf)
 {
-	char	*str;
-
-	if (!date || !str)
+	if (!date)
 		return (NULL);
-	str = calloc(sizeof(char), DATE_LEN);
-	snprintf(str, DATE_LEN, "%02d/%02d/%04d", date->g, date->m, date->a);
-	return str;
+	snprintf(buf, DATE_LEN, "%02d-%02d-%04d", date->g, date->m, date->a);
+	return buf;
+}
+
+// converte due cifre consecutive in un numero ("18" -> 18), -1 se non sono cifre
+static int	two_digits(const char *s)
+{
+	if (!isdigit((unsigned char)s[0]) || !isdigit((unsigned char)s[1]))
+		return (-1);
+	return ((s[0] - '0') * 10 + (s[1] - '0'));
+}
+
+// legge un orario "HH:MM" (es. "18:30") e lo scrive in *time.
+// Accetta da 00:00 a 23:59, piu' 24:00 (mezzanotte, usata come ora di fine).
+// ritorna 0 se ok, -1 se la stringa non e' un orario valido
+int	str_to_time(const char *str, t_time *time)
+{
+	int	h;
+	int	min;
+
+	// "HH:MM" e' lungo esattamente TIME_LEN - 1 caratteri, con ':' in posizione 2
+	if (!str || !time || strlen(str) != TIME_LEN - 1 || str[2] != ':')
+		return (-1);
+	h = two_digits(str);
+	min = two_digits(str + 3);
+	if (h < 0 || min < 0 || min > 59 || h > 24 || (h == 24 && min != 0))
+		return (-1);
+	time->h = h;
+	time->min = min;
+	return (0);
+}
+
+// legge una data "GG-MM-AAAA" (es. "20-12-2026") e la scrive in *date,
+// controllando che esista davvero (no 30 febbraio, anni bisestili...).
+// ritorna 0 se ok, -1 se la stringa non e' una data valida
+int	str_to_date(const char *str, t_date *date)
+{
+	t_date	d;
+	int		century;
+	int		year;
+
+	// "GG-MM-AAAA" e' lungo esattamente DATE_LEN - 1 caratteri, '-' in posizione 2 e 5
+	if (!str || !date || strlen(str) != DATE_LEN - 1 || str[2] != '-' || str[5] != '-')
+		return (-1);
+	d.g = two_digits(str);
+	d.m = two_digits(str + 3);
+	century = two_digits(str + 6); // "2026" -> 20 e 26
+	year = two_digits(str + 8);
+	if (d.g < 0 || d.m < 0 || century < 0 || year < 0)
+		return (-1);
+	d.a = century * 100 + year;
+	if (!is_valid_date(&d))
+		return (-1);
+	*date = d;
+	return (0);
+}
+
+// confronta due date: < 0 se a viene prima di b, 0 se sono uguali, > 0 se dopo
+int	date_cmp(const t_date *a, const t_date *b)
+{
+	if (a->a != b->a)
+		return (a->a - b->a);
+	if (a->m != b->m)
+		return (a->m - b->m);
+	return (a->g - b->g);
 }
 
 // ritorna la data di oggi (ora locale), NULL in caso di errore
@@ -127,6 +193,7 @@ void	free_date(t_date *date)
 
 
 
+/*
 static void	test_time(void)
 {
 	t_time *time;
@@ -172,7 +239,6 @@ static void	test_date(void)
 	return;
 }
 
-/*
 int main(void)
 {
 	test_time();
