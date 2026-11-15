@@ -1,18 +1,8 @@
 #include "../headers/structs.h"
 #include "../headers/utils.h"
 
-// copia src in dst (grande dst_size) solo se ci sta, '\0' compreso.
-// ritorna 0 se ok, -1 se src e' NULL o troppo lunga
-static int	copy_field(char *dst, const char *src, size_t dst_size)
-{
-	if (!src || strlen(src) >= dst_size)
-		return (-1);
-	strcpy(dst, src);
-	return (0);
-}
-
 // crea una prenotazione (da liberare con free). L'id vale 0: lo assegna
-// storage_add al momento del salvataggio.
+// storage_add_booking (booking_op.c) al momento del salvataggio.
 // ritorna NULL se un campo e' NULL o troppo lungo, o se fine <= inizio.
 // NB: qui si controlla solo la coerenza dei dati, le regole del LAN center
 // (orari di apertura, durata massima, data non passata...) le controlla il server.
@@ -31,8 +21,8 @@ t_booking	*init_booking(const char *station, const char *username,
 	booking = calloc(1, sizeof(t_booking));
 	if (!booking)
 		return (NULL);
-	if (copy_field(booking->station, station, MAX_STATION) < 0
-		|| copy_field(booking->username, username, MAX_USERNAME) < 0)
+	if (copy_str(booking->station, station, MAX_STATION) < 0
+		|| copy_str(booking->username, username, MAX_USERNAME) < 0)
 	{
 		free(booking);
 		return (NULL);
@@ -83,7 +73,7 @@ int	booking_overlaps(const t_booking *a, const t_booking *b)
 		return (0);
 	if (a->status == STATUS_REJECTED || b->status == STATUS_REJECTED)
 		return (0);
-	if (strcmp(a->station, b->station) != 0 || date_cmp(&a->date, &b->date) != 0)
+	if (strcmp(a->station, b->station) != 0 || datecmp(&a->date, &b->date) != 0)
 		return (0);
 	return (time_to_min(&a->start_time) < time_to_min(&b->end_time)
 		&& time_to_min(&b->start_time) < time_to_min(&a->end_time));
@@ -114,7 +104,7 @@ int	booking_to_csv(const t_booking *booking, char *buf, size_t size)
 	return (len);
 }
 
-// campi di una riga CSV, nell'ordine in cui compaiono
+// campi di una riga CSV dei bookings
 enum e_csv_field
 {
 	CSV_ID,
@@ -136,13 +126,13 @@ int	booking_from_csv(const char *line, t_booking *booking)
 	char	*fields[CSV_FIELDS];
 
 	// split_fields modifica la stringa: lavoro su una copia
-	if (copy_field(copy, line, MAX_LINE) < 0)
+	if (copy_str(copy, line, MAX_LINE) < 0)
 		return (-1);
 	if (split_fields(copy, ',', fields, CSV_FIELDS) != CSV_FIELDS)
 		return (-1);
 	if (str_to_int(fields[CSV_ID], &booking->id) < 0
-		|| copy_field(booking->station, fields[CSV_STATION], MAX_STATION) < 0
-		|| copy_field(booking->username, fields[CSV_USERNAME], MAX_USERNAME) < 0
+		|| copy_str(booking->station, fields[CSV_STATION], MAX_STATION) < 0
+		|| copy_str(booking->username, fields[CSV_USERNAME], MAX_USERNAME) < 0
 		|| str_to_date(fields[CSV_DATE], &booking->date) < 0
 		|| str_to_time(fields[CSV_START], &booking->start_time) < 0
 		|| str_to_time(fields[CSV_END], &booking->end_time) < 0

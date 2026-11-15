@@ -2,5 +2,7 @@
 subject.pdf
 server
 client
-a.outtest_storage
+a.out
+test_storage
 test_bookings.csv
+test_users.csv

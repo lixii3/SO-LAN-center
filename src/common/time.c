@@ -3,7 +3,8 @@
 #include <time.h>
 #include <ctype.h>
 
-// inizializza e ritorna un s_time, validando in automatico i dati
+// inizializza e ritorna un s_time, validando in automatico i dati.
+// Accetta 0 <= h < 24 e 0 <= min < 60.
 t_time	*init_time(int h, int min)
 {
 	t_time *time;
@@ -18,6 +19,45 @@ t_time	*init_time(int h, int min)
 	return (time);
 }
 
+// scrive in *now_date e *now_time (se non sono NULL) la data e l'ora correnti,
+// prese dallo STESSO istante (cosi' a mezzanotte non si mescolano giorni diversi).
+// ritorna 0 se ok, -1 in caso di errore
+static int	get_now(t_date *now_date, t_time *now_time)
+{
+	time_t		now;
+	struct tm	*tm_info;
+
+	now = time(NULL); // secondi dal 1/1/1970
+	if (now == (time_t)-1)
+		return (-1);
+	tm_info = localtime(&now); // li scompone in giorno/mese/anno/ora/minuti...
+	if (!tm_info)              // NB: punta a un buffer statico, NON va liberato
+		return (-1);
+	if (now_date)
+	{
+		now_date->g = tm_info->tm_mday;
+		now_date->m = tm_info->tm_mon + 1;     // tm_mon va da 0 a 11
+		now_date->a = tm_info->tm_year + 1900; // tm_year = anni dal 1900
+	}
+	if (now_time)
+	{
+		now_time->h = tm_info->tm_hour; // 0-23
+		now_time->min = tm_info->tm_min; // 0-59
+	}
+	return (0);
+}
+
+// ritorna l'ora corrente (ora locale), NULL in caso di errore
+t_time	*init_curr_time(void)
+{
+	t_time	now;
+
+	if (get_now(NULL, &now) < 0)
+		return (NULL);
+	return (init_time(now.h, now.min));
+}
+
+
 // converte un orario in minuti dalla mezzanotte (18:30 -> 1110):
 // semplifica il confronto tra orari
 int	time_to_min(const t_time *time)
@@ -31,6 +71,16 @@ int		is_within_time_limits(t_time *time, int h, int min)
 	if (!time)
 		return (0);
 	return (time->h * 60 + time->min <= h * 60 + min);
+}
+
+
+// Compara due orari.
+// ritorna 0 se uguali, valore negativo se t1 < t2, positivo se t1 > t2.
+int	timecmp(t_time *t1, t_time *t2)
+{
+	if (!t1 || !t2)
+		return (-1);
+	return (time_to_min(t1) - time_to_min(t2));
 }
 
 // libera il blocco allocato per time usando free()
@@ -84,6 +134,16 @@ t_date	*init_date(int g, int m, int a)
 	return (NULL);
 }
 
+// ritorna la data di oggi (ora locale), NULL in caso di errore
+t_date	*init_curr_date(void)
+{
+	t_date	today;
+
+	if (get_now(&today, NULL) < 0)
+		return (NULL);
+	return (init_date(today.g, today.m, today.a));
+}
+
 // scrive in buf (almeno DATE_LEN byte) la data in formato GG-MM-AAAA e ritorna buf
 char	*date_to_str(const t_date *date, char *buf)
 {
@@ -101,20 +161,17 @@ static int	two_digits(const char *s)
 	return ((s[0] - '0') * 10 + (s[1] - '0'));
 }
 
-// legge un orario "HH:MM" (es. "18:30") e lo scrive in *time.
-// Accetta da 00:00 a 23:59, piu' 24:00 (mezzanotte, usata come ora di fine).
+// legge un orario "HH:MM" e lo scrive in *time.
 // ritorna 0 se ok, -1 se la stringa non e' un orario valido
 int	str_to_time(const char *str, t_time *time)
 {
 	int	h;
 	int	min;
-
-	// "HH:MM" e' lungo esattamente TIME_LEN - 1 caratteri, con ':' in posizione 2
 	if (!str || !time || strlen(str) != TIME_LEN - 1 || str[2] != ':')
 		return (-1);
 	h = two_digits(str);
 	min = two_digits(str + 3);
-	if (h < 0 || min < 0 || min > 59 || h > 24 || (h == 24 && min != 0))
+	if (h < 0 || h > 23 || min < 0 || min > 59) // -1 = non erano cifre
 		return (-1);
 	time->h = h;
 	time->min = min;
@@ -122,7 +179,7 @@ int	str_to_time(const char *str, t_time *time)
 }
 
 // legge una data "GG-MM-AAAA" (es. "20-12-2026") e la scrive in *date,
-// controllando che esista davvero (no 30 febbraio, anni bisestili...).
+// controllando che esista davvero.
 // ritorna 0 se ok, -1 se la stringa non e' una data valida
 int	str_to_date(const char *str, t_date *date)
 {
@@ -147,35 +204,13 @@ int	str_to_date(const char *str, t_date *date)
 }
 
 // confronta due date: < 0 se a viene prima di b, 0 se sono uguali, > 0 se dopo
-int	date_cmp(const t_date *a, const t_date *b)
+int	datecmp(const t_date *a, const t_date *b)
 {
 	if (a->a != b->a)
 		return (a->a - b->a);
 	if (a->m != b->m)
 		return (a->m - b->m);
 	return (a->g - b->g);
-}
-
-// ritorna la data di oggi (ora locale), NULL in caso di errore
-t_date	*init_curr_date(void)
-{
-	time_t		now;
-	struct tm	*tm_info;
-	t_date		*today;
-
-	now = time(NULL); // secondi dal 1/1/1970
-	if (now == (time_t)-1)
-		return (NULL);
-	tm_info = localtime(&now); // li scompone in giorno/mese/anno...
-	if (!tm_info)
-		return (NULL);
-	today = calloc(1, sizeof(t_date));
-	if (!today)
-		return (NULL);
-	today->g = tm_info->tm_mday;
-	today->m = tm_info->tm_mon + 1; // tm_mon va da 0-11
-	today->a = tm_info->tm_year + 1900; // tm_year anni dal 1900
-	return (today);
 }
 
 
@@ -187,7 +222,31 @@ void	free_date(t_date *date)
 	date = NULL;
 }
 
+// Dice se il momento indicato da date e time e' gia' passato.
+//  - solo date (time NULL): passato se date e' prima di oggi (oggi NON e' passato)
+//  - solo time (date NULL): passato se time e' prima dell'ora attuale di oggi
+//  - entrambi: passato se date e' prima di oggi, oppure se e' oggi e time e'
+//    prima dell'ora attuale
+// Ritorna 1 se e' passato, 0 se no, -1 in caso di errore (o se sono entrambi NULL)
+int	is_past(const t_date *date, const t_time *time)
+{
+	t_date	today;
+	t_time	now;
+	int		diff;
 
+	if (!date && !time)
+		return (-1);
+	if (get_now(&today, &now) < 0) // data e ora prese insieme, dallo stesso istante
+		return (-1);
+	if (date)
+	{
+		diff = datecmp(date, &today);
+		if (diff != 0 || !time) // giorno diverso da oggi, oppure l'ora non interessa
+			return (diff < 0);
+	}
+	// qui la data e' oggi (o non e' stata data): decide l'ora
+	return (time_to_min(time) < time_to_min(&now));
+}
 
 
 

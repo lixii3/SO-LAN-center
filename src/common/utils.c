@@ -112,3 +112,18 @@ int	str_to_int(const char *str, int *out)
 	*out = (int)n;
 	return (0);
 }
+
+// copia src in dst (grande size byte, '\0' compreso).
+// ritorna 0 se ok, -1 se src e' NULL, vuota o troppo lunga (dst non viene toccata)
+int	copy_str(char *dst, const char *src, size_t size)
+{
+	size_t	len;
+
+	if (!dst || !src)
+		return (-1);
+	len = strlen(src);
+	if (len == 0 || len >= size)
+		return (-1);
+	memcpy(dst, src, len + 1);
+	return (0);
+}

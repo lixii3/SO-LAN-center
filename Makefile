@@ -15,7 +15,7 @@ OBJ_DIR = .obj
 COM_SRC = net.c time.c booking.c utils.c
 
 # file esclusivi
-SRV_SRC = server.c storage.c
+SRV_SRC = server.c validation.c storage.c booking_op.c user_op.c
 CLI_SRC = client.c
 
 # --- Oggetti -----------------------------------------------------------------

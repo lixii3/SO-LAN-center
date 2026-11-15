@@ -14,13 +14,17 @@ typedef struct s_time
 } t_time;
 
 t_time	*init_time(int h, int min);
+t_time	*init_curr_time(void);
 char	*time_to_str(const t_time *time, char *buf);
 int		str_to_time(const char *str, t_time *time);
 int		time_to_min(const t_time *time);
 int		is_within_time_limits(t_time *time, int h, int min);
+int	timecmp(t_time *t1, t_time *t2);
 void	free_time(t_time *time);
 
-// data (nel protocollo e nel CSV in formato GG-MM-AAAA)
+// --- date ---
+
+// data formato GG-MM-AAAA)
 typedef struct s_date
 {
 	int	g;
@@ -32,16 +36,13 @@ t_date	*init_date(int g, int m, int a);
 t_date	*init_curr_date(void);
 char	*date_to_str(const t_date *date, char *buf);
 int		str_to_date(const char *str, t_date *date);
-int		date_cmp(const t_date *a, const t_date *b);
+int		datecmp(const t_date *a, const t_date *b);
 void	free_date(t_date *date);
+int		is_past(const t_date *date, const t_time *time);
 
 
 // --- booking ---
 
-// NB: date, start_time ed end_time sono struct (non puntatori): cosi' una
-// prenotazione e' un blocco unico di memoria, si copia con un semplice "=",
-// si puo' leggere dal file direttamente nei suoi campi e non servono
-// malloc/free per data e orari.
 typedef struct s_booking
 {
 	int				id;

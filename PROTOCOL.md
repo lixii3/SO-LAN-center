@@ -40,14 +40,14 @@ ERR <CODICE> [messaggio]
 | Dato        | Formato        | Esempio      | Note |
 |-------------|----------------|--------------|------|
 | data        | `GG-MM-AAAA`   | `20-12-2026` | le date si confrontano convertendole in `t_date` (non con `strcmp`, che metterebbe il 20-12-2026 dopo l'01-01-2027) |
-| ora         | `HH:MM`        | `18:30`      | minuti solo `00` o `30`; `24:00` = mezzanotte (solo come ora di fine) |
+| ora         | `HH:MM`        | `18:30`      | minuti solo `00` o `30`, da `00:00` a `23:59` (`24:00` non e' valido) |
 | postazione  | `TIPO-NN`      | `PC-03`      | tipi: `PC`, `PS5`, `XBOX`, `SWITCH` |
 | stato       | parola         | `PENDING`    | `PENDING`, `APPROVED`, `REJECTED` |
 | ID          | intero > 0     | `17`         | assegnato dal server |
 
 ### Regole di prenotazione
 
-- Orario di apertura: **10:00 – 24:00**.
+- Orario di apertura: **10:00 – 23:00**.
 - Durata: minimo **30 minuti**, massimo **4 ore**, a multipli di 30 minuti.
 - Non si può prenotare nel passato.
 - Due prenotazioni sono **in conflitto** se riguardano la stessa postazione nella

@@ -58,10 +58,10 @@ static void	test_conversions(void)
 	check(str_to_date("2026-12-20", &d2) < 0, "formato AAAA-MM-GG rifiutato");
 	check(str_to_date("20-12-26", &d2) < 0, "anno a 2 cifre rifiutato");
 	str_to_date("01-01-2027", &d2);
-	check(date_cmp(&d, &d2) < 0, "date_cmp: 20-12-2026 viene prima di 01-01-2027");
+	check(datecmp(&d, &d2) < 0, "datecmp: 20-12-2026 viene prima di 01-01-2027");
 	check(str_to_time("08:30", &t) == 0 && t.h == 8 && t.min == 30, "str_to_time legge 08:30");
-	check(str_to_time("24:00", &t) == 0, "24:00 accettato (mezzanotte come fine)");
-	check(str_to_time("24:30", &t) < 0, "24:30 rifiutato");
+	check(str_to_time("24:00", &t) < 0, "24:00 rifiutato");
+	check(str_to_time("ab:cd", &t) < 0, "ab:cd rifiutato");
 	check(str_to_time("18:60", &t) < 0, "18:60 rifiutato");
 	check(str_to_time("8:30", &t) < 0, "8:30 (una cifra) rifiutato");
 	check(str_to_int("17", &n) == 0 && n == 17, "str_to_int legge 17");
@@ -134,48 +134,48 @@ static void	test_storage_functions(void)
 
 	printf("\n--- storage.c ---\n");
 	unlink(TEST_FILE);
-	fd = storage_open(TEST_FILE);
+	fd = storage_open(TEST_FILE, HEADER_BOOKING);
 	check(fd >= 0, "storage_open crea il file");
 
-	all = storage_list(fd, &count);
+	all = storage_list_bookings(fd, &count);
 	check(all != NULL && count == 0, "archivio nuovo: 0 prenotazioni");
 	free(all);
 
 	b = make("PC-03", "mario", "20-12-2026", 18, 0, 21, 0);
-	id1 = storage_add(fd, &b, NULL);
+	id1 = storage_add_booking(fd, &b, NULL);
 	b = make("PC-03", "luigi", "20-12-2026", 20, 0, 22, 0);
-	id2 = storage_add(fd, &b, NULL);
+	id2 = storage_add_booking(fd, &b, NULL);
 	b = make("PS5-1", "peach", "20-12-2026", 20, 0, 22, 0);
-	id3 = storage_add(fd, &b, NULL);
-	check(id1 == 1 && id2 == 2 && id3 == 3, "storage_add assegna id 1, 2, 3");
+	id3 = storage_add_booking(fd, &b, NULL);
+	check(id1 == 1 && id2 == 2 && id3 == 3, "storage_add_booking assegna id 1, 2, 3");
 
-	check(storage_find(fd, 2, &found) == 0 && strcmp(found.username, "luigi") == 0,
-		"storage_find trova la prenotazione 2");
-	check(storage_find(fd, 99, &found) == STORAGE_NOT_FOUND,
-		"storage_find: id inesistente -> NOT_FOUND");
+	check(storage_find_booking(fd, 2, &found) == 0 && strcmp(found.username, "luigi") == 0,
+		"storage_find_booking trova la prenotazione 2");
+	check(storage_find_booking(fd, 99, &found) == STORAGE_NOT_FOUND,
+		"storage_find_booking: id inesistente -> NOT_FOUND");
 
-	check(storage_set_status(fd, 1, STATUS_APPROVED, NULL) == 1,
+	check(storage_set_booking_status(fd, 1, STATUS_APPROVED, NULL) == 1,
 		"approvare la 1 rifiuta automaticamente la 2 (in conflitto)");
-	storage_find(fd, 2, &found);
+	storage_find_booking(fd, 2, &found);
 	check(found.status == STATUS_REJECTED, "la 2 ora e' REJECTED");
-	storage_find(fd, 3, &found);
+	storage_find_booking(fd, 3, &found);
 	check(found.status == STATUS_PENDING, "la 3 (altra postazione) resta PENDING");
 
 	b = make("PC-03", "toad", "20-12-2026", 19, 0, 20, 0);
 	conflict = 0;
-	check(storage_add(fd, &b, &conflict) == STORAGE_CONFLICT && conflict == 1,
-		"storage_add rifiuta una sovrapposizione con la APPROVED 1");
+	check(storage_add_booking(fd, &b, &conflict) == STORAGE_CONFLICT && conflict == 1,
+		"storage_add_booking rifiuta una sovrapposizione con la APPROVED 1");
 
 	conflict = 0;
-	check(storage_set_status(fd, 2, STATUS_APPROVED, &conflict) == STORAGE_CONFLICT
+	check(storage_set_booking_status(fd, 2, STATUS_APPROVED, &conflict) == STORAGE_CONFLICT
 		&& conflict == 1, "non si puo' approvare la 2: confligge con la 1");
 
-	check(storage_remove(fd, 3) == 0, "storage_remove elimina la 3");
-	check(storage_remove(fd, 3) == STORAGE_NOT_FOUND, "rimuoverla di nuovo -> NOT_FOUND");
+	check(storage_remove_booking(fd, 3) == 0, "storage_remove_booking elimina la 3");
+	check(storage_remove_booking(fd, 3) == STORAGE_NOT_FOUND, "rimuoverla di nuovo -> NOT_FOUND");
 	close(fd);
 
-	fd = storage_open(TEST_FILE); // riapro: i dati devono essere ancora li'
-	all = storage_list(fd, &count);
+	fd = storage_open(TEST_FILE, HEADER_BOOKING); // riapro: i dati devono essere ancora li'
+	all = storage_list_bookings(fd, &count);
 	check(all != NULL && count == 2 && all[0].status == STATUS_APPROVED,
 		"dopo la riapertura il file contiene i dati giusti");
 	free(all);
@@ -199,7 +199,7 @@ static void	test_concurrency(void)
 
 	printf("\n--- concorrenza (%d processi) ---\n", n);
 	unlink(TEST_FILE);
-	fd = storage_open(TEST_FILE);
+	fd = storage_open(TEST_FILE, HEADER_BOOKING);
 	close(fd);
 	// svuoto il buffer di printf PRIMA della fork: altrimenti ogni figlio
 	// ne eredita una copia e la ristampa quando termina
@@ -209,9 +209,9 @@ static void	test_concurrency(void)
 	{
 		if (fork() == 0)
 		{
-			fd = storage_open(TEST_FILE); // ogni figlio ha il suo fd
+			fd = storage_open(TEST_FILE, HEADER_BOOKING); // ogni figlio ha il suo fd
 			b = make("PC-01", "user", "20-12-2026", 18, 0, 19, 0);
-			storage_add(fd, &b, NULL);
+			storage_add_booking(fd, &b, NULL);
 			close(fd);
 			_exit(0); // _exit non svuota i buffer di stdio (ereditati dal padre)
 		}
@@ -219,8 +219,8 @@ static void	test_concurrency(void)
 	}
 	while (wait(NULL) > 0) // aspetto tutti i figli
 		;
-	fd = storage_open(TEST_FILE);
-	all = storage_list(fd, &count);
+	fd = storage_open(TEST_FILE, HEADER_BOOKING);
+	all = storage_list_bookings(fd, &count);
 	check(all != NULL && count == n, "tutte le prenotazioni sono state salvate");
 	ok = (all != NULL);
 	i = 0;
@@ -243,8 +243,8 @@ static void	test_concurrency(void)
 	{
 		if (fork() == 0)
 		{
-			fd = storage_open(TEST_FILE);
-			storage_set_status(fd, i + 1, STATUS_APPROVED, NULL);
+			fd = storage_open(TEST_FILE, HEADER_BOOKING);
+			storage_set_booking_status(fd, i + 1, STATUS_APPROVED, NULL);
 			close(fd);
 			_exit(0); // _exit non svuota i buffer di stdio (ereditati dal padre)
 		}
@@ -252,7 +252,7 @@ static void	test_concurrency(void)
 	}
 	while (wait(NULL) > 0)
 		;
-	all = storage_list(fd, &count);
+	all = storage_list_bookings(fd, &count);
 	j = 0;
 	i = 0;
 	while (all && i < count)
@@ -264,12 +264,47 @@ static void	test_concurrency(void)
 	unlink(TEST_FILE);
 }
 
+#define TEST_USERS	"test_users.csv"
+
+static void	test_users(void)
+{
+	int		fd;
+	int		admin;
+	t_user	u;
+
+	printf("\n--- utenti ---\n");
+	unlink(TEST_USERS);
+	fd = storage_open(TEST_USERS, HEADER_USERS);
+	check(fd >= 0, "storage_open crea il file utenti");
+	check(storage_find_user(fd, "lia", &u) == STORAGE_NOT_FOUND, "file vuoto -> NOT_FOUND");
+	// ultima riga senza '\n' e con '\r' di Windows: devono funzionare lo stesso
+	write_all(fd, "lia,1234,admin\r\nele,5678,USER", strlen("lia,1234,admin\r\nele,5678,USER"));
+	admin = -1;
+	check(storage_check_credentials(fd, "lia", "1234", &admin) == 0 && admin == 1,
+		"lia/1234 -> ok, admin");
+	check(storage_check_credentials(fd, "ele", "5678", &admin) == 0 && admin == 0,
+		"ele/5678 -> ok, utente normale (ruolo in maiuscolo)");
+	check(storage_check_credentials(fd, "lia", "sbagliata", &admin) == STORAGE_NOT_FOUND,
+		"password sbagliata -> NOT_FOUND");
+	check(storage_check_credentials(fd, "bob", "1234", &admin) == STORAGE_NOT_FOUND,
+		"utente inesistente -> NOT_FOUND");
+	check(storage_check_credentials(fd, "username", "password", &admin) == STORAGE_NOT_FOUND,
+		"l'intestazione non e' un utente");
+	check(storage_find_user(fd, "ele", &u) == 0 && strcmp(u.password, "5678") == 0,
+		"storage_find_user copia i dati");
+	write_all(fd, "\nrotto,123\n", strlen("\nrotto,123\n"));
+	check(storage_find_user(fd, "zzz", &u) == STORAGE_ERROR, "riga malformata -> ERROR");
+	close(fd);
+	unlink(TEST_USERS);
+}
+
 int	main(void)
 {
 	test_conversions();
 	test_booking_functions();
 	test_storage_functions();
 	test_concurrency();
+	test_users();
 	printf("\n%s (%d falliti)\n", g_failed ? "CI SONO ERRORI" : "TUTTO OK", g_failed);
 	return (g_failed != 0);
 }
