@@ -14,7 +14,7 @@ int main(void) {
 	server_info = init_server(SERVER_PORT, SERVER_ADDRESS);
 	printf("Server ready (CTRL-C per terminare)\n");
 	clientAddressLen = sizeof(clientAddress);
-	// ciclo infinito in attesa di connessione 
+	// ciclo infinito in attesa di connessione
 	while (1) {
 		// accetta le connessioni 
 		if ((connectSocket = accept(server_info.socket,

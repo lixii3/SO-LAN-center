@@ -46,12 +46,14 @@ const char	*set_role(t_session *session, char *role, int ufd, char	*username)
 	return (NULL);
 }
 
-// inizializza un server. Esegue anche il bind.
+// inizializza un server. Esegue anche il bind() e listen() con max_conn.
 // Ritorna il server oppure esegue una exit;
-t_server	init_server(short port, const char *address)
+t_server	init_server(short port, const char *address, int max_conn)
 {
 	t_server	server;
-	// apertura socket del server 
+	int			reuse;
+
+	// apertura socket del server
 	if ((server.socket = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 	{
 		perror("Error in server socket()");
@@ -62,12 +64,24 @@ t_server	init_server(short port, const char *address)
 	server.address.sin_port = htons(port);
 	server.address.sin_addr.s_addr = inet_addr(address);
 
+	// permette di rifare bind() sulla stessa porta subito dopo
+	// il riavvio del server se quello vecchio è in TIMEWAIT;
+	reuse = 1;
+	if (setsockopt(server.socket, SOL_SOCKET, SO_REUSEADDR,
+			&reuse, sizeof(reuse)) == -1)
+	{
+		perror("Error in server setsockopt()");
+		close(server.socket);
+		exit(EXIT_FAILURE);
+	}
 	// binding dell'indirizzo al socket
 	if (bind(server.socket, (struct sockaddr*)	&server.address, sizeof(server.address)) == -1)
 	{
 		perror("Error in server socket bind()");
 		exit(EXIT_FAILURE);
 	}
+	if (listen(server.socket, max_conn) < 0)
+		exit(EXIT_FAILURE);
 	return (server);
 }
 

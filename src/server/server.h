@@ -28,7 +28,7 @@ typedef struct s_session
 
 // --- server_op.c
 
-t_server	init_server(short port, const char *address);
+t_server	init_server(short port, const char *address, int max_conn);
 t_session	init_session(int bfd, int ufd);
 const char	*set_role(t_session *session, char *role, int ufd, char	*username);
 const char	*session(int connectSocket, struct sockaddr_in clientAddress);

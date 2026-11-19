@@ -51,7 +51,7 @@ $(TEST_NAME): $(TEST_OBJ)
 	$(CC) $(CFLAGS) $^ -o $@
 
 # compila ed esegue i test
-tests: $(TEST_NAME)
+test: $(TEST_NAME)
 	./$(TEST_NAME)
 
 run-server: $(SERVER_NAME)
@@ -76,4 +76,4 @@ fclean: clean
 # Ricompila tutto da zero
 re: fclean all
 
-.PHONY: all tests run-server run-client test valgrind clean fclean re
+.PHONY: all run-server run-client test valgrind clean fclean re

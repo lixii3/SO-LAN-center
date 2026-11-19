@@ -10,7 +10,7 @@
 
 // --- rete --------------------------
 
-#define SERVER_PORT		1234
+#define SERVER_PORT		12345
 #define SERVER_ADDRESS	"127.0.0.1"
 
 // --- limiti dei campi ---
