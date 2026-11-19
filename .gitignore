@@ -1,8 +1,9 @@
 .obj
 subject.pdf
-server
-client
+/server
+/client
 a.out
 test_storage
 test_bookings.csv
 test_users.csv
+.TODO

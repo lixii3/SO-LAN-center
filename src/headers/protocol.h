@@ -1,17 +1,19 @@
 #ifndef PROTOCOL_H
 #define PROTOCOL_H
 
-// --- ICP ---
+// --- ICP -----------
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-// rete
+// --- rete --------------------------
+
 #define SERVER_PORT		1234
 #define SERVER_ADDRESS	"127.0.0.1"
 
-// limiti dei campi
+// --- limiti dei campi ---
 enum	e_limits
 {
 	MAX_LINE = 256, // max len linea di comando
@@ -26,14 +28,14 @@ enum	e_limits
 	MAX_DURATION = 240, // durata massima di una prenotazione (minuti, 4 ore)
 };
 
-// scaglioni orari permessi
+// --- scaglioni orari permessi ---
 enum e_booking_minutes
 {
 	THIRTY = 30,
 	ZERO = 0
 };
 
-// stati prenotazione
+// --- stati prenotazione ---
 enum e_status
 {
 	STATUS_PENDING = 'P',
@@ -41,11 +43,13 @@ enum e_status
 	STATUS_REJECTED = 'R'
 };
 
-// ruoli
+// --- ruoli --------------------
+
 #define ROLE_USER "USER"
 #define ROLE_ADMIN "ADMIN"
 
-// comandi
+// --- comandi ------------------
+
 #define CMD_LOGIN		"LOGIN"
 #define CMD_LOGOUT		"LOGOUT"
 #define CMD_BOOK		"BOOK"
@@ -53,19 +57,22 @@ enum e_status
 #define CMD_QUIT		"QUIT"
 #define CMD_MY			"MY"
 
-// comandi admin
+// --- comandi admin
+
 #define CMD_ALL			"ALL"
 #define CMD_APPROVE		"APPROVE"
 #define CMD_REJECT		"REJECT"
 #define CMD_SET			"SET"
 #define CMD_CONFLICTS	"CONFLICTS"
 
-// risposte server
+// --- risposte server -----------
+
 #define RESP_OK		"OK"
 #define RESP_ERR	"ERR"
 #define RESP_BYE	"BYE"
 
-// codici di errore
+// --- codici di errore -----------------------------
+
 #define ERR_UNKNOWN_COMMAND		"UNKNOWN_COMMAND"
 #define ERR_SYNTAX				"SYNTAX"
 #define ERR_LINE_TOO_LONG		"LINE_TOO_LONG"
