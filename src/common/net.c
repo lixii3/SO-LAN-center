@@ -3,7 +3,7 @@
 
 // legge 1 riga dell'fd dentro line. Legge al massimo size caratteri della riga.
 // Ritorna il numero dicaratteri letti
-// oppure un codice errore NET_ERROR, NET_CLOSED o NET_TOO_LONG;
+// oppure un codice errore NET_ERROR, NET_CLOSED, NET_TOO_LONG, NET_EMPTY_LINE;
 int	recv_line(int fd, char *line, size_t size)
 {
 	char	c;
@@ -32,6 +32,8 @@ int	recv_line(int fd, char *line, size_t size)
 	}
 	if (too_long)
 		return (NET_TOO_LONG);
+	if (i == 0)
+		return (NET_EMPTY_LINE);
 	return ((int)i);
 }
 

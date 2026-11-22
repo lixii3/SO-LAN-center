@@ -10,8 +10,8 @@ t_session	init_session(int bfd, int ufd)
 	session.failed_logins = -1;
 	if (bfd < 0 || ufd < 0)
 		return session;
-	session.booking_fd = ufd;
-	session.users_fd = bfd;
+	session.booking_fd = bfd;
+	session.users_fd = ufd;
 	session.role = NULL;
 	bzero(session.user.username, MAX_USERNAME);
 	bzero(session.user.password, MAX_PASSWORD);
@@ -47,8 +47,10 @@ const char	*set_role(t_session *session, char *role, int ufd, char	*username)
 }
 
 // inizializza un server. Esegue anche il bind() e listen() con max_conn.
+// address e' un IPv4 in formato dots: "127.0.0.1" accetta solo connessioni
+// dalla stessa macchina, "0.0.0.0" (INADDR_ANY) da tutte le interfacce.
 // Ritorna il server oppure esegue una exit;
-t_server	init_server(short port, const char *address, int max_conn)
+t_server	init_server(unsigned short port, const char *address, int max_conn)
 {
 	t_server	server;
 	int			reuse;
@@ -62,7 +64,14 @@ t_server	init_server(short port, const char *address, int max_conn)
 	// preparazione dell'indirizzo locale del server 
 	server.address.sin_family = AF_INET;
 	server.address.sin_port = htons(port);
-	server.address.sin_addr.s_addr = inet_addr(address);
+	// inet_pton al posto di inet_addr: inet_addr non distingue un indirizzo
+	// non valido da "255.255.255.255" (ritornano entrambi INADDR_NONE)
+	if (inet_pton(AF_INET, address, &server.address.sin_addr) != 1)
+	{
+		fprintf(stderr, "Indirizzo IPv4 non valido: %s\n", address);
+		close(server.socket);
+		exit(EXIT_FAILURE);
+	}
 
 	// permette di rifare bind() sulla stessa porta subito dopo
 	// il riavvio del server se quello vecchio è in TIMEWAIT;
@@ -78,16 +87,22 @@ t_server	init_server(short port, const char *address, int max_conn)
 	if (bind(server.socket, (struct sockaddr*)	&server.address, sizeof(server.address)) == -1)
 	{
 		perror("Error in server socket bind()");
+		close(server.socket);
 		exit(EXIT_FAILURE);
 	}
 	if (listen(server.socket, max_conn) < 0)
+	{
+		perror("Error in server listen()");
+		close(server.socket);
 		exit(EXIT_FAILURE);
+	}
 	return (server);
 }
 
 // Gestisce la sessione, chiama handle_cmd per
 // eseguire il comando ricevuto dal client connsesso.
-// Ritorna NULL oppure un codice di errore ERR_.
+// Ritorna NULL se il client chiude la sessione regolareìmente,
+// oppure un codice di errore ERR_.
 const char	*session(int connectSocket, struct sockaddr_in clientAddress)
 {
 	t_session	session;
@@ -96,7 +111,7 @@ const char	*session(int connectSocket, struct sockaddr_in clientAddress)
 	char		*cmd[MAX_ARGS];
 	char		*clientIP;
 	int			returnCode;
-	const char	*resp;
+	char	*resp;
 	char		buffer[MAX_LINE];
 	int			argc;
 
@@ -109,19 +124,27 @@ const char	*session(int connectSocket, struct sockaddr_in clientAddress)
 	clientIP = inet_ntoa(clientAddress.sin_addr);
 	printf("\nClient @ %s connects on socket %d\n", clientIP, connectSocket);
 		// riceve i messaggi
-	while ((returnCode = recv_line(connectSocket, buffer, MAX_LINE)) != 0)
+	while (1)
 	{
+		returnCode = recv_line(connectSocket, buffer, MAX_LINE);
 		if (returnCode == NET_TOO_LONG)
 			send_line(connectSocket, RESP_ERR " " ERR_LINE_TOO_LONG);
-		else if (returnCode < 0)
-			send_line(connectSocket,  RESP_ERR " " ERR_SERVER);
+		else if (returnCode == NET_EMPTY_LINE)
+			send_line(connectSocket, RESP_ERR " " ERR_SYNTAX);
+		else if (returnCode == NET_CLOSED)
+			return (NULL);
+		else if (returnCode == NET_ERROR)
+			return (ERR_SERVER);
 		else
 		{
 			if ((argc = split_cmd(buffer, cmd)) <= 0)
+			{
 				send_line(connectSocket, RESP_ERR " " ERR_SYNTAX);
+				continue;
+			}
 			resp = handle_cmd(cmd, argc, &session);
 			send_line(connectSocket, resp);
+			free(resp);
 		}
 	}
-	return (NULL);
 }

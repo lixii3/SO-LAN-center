@@ -26,6 +26,7 @@ enum	e_limits
 	CLOSING_H = 23, //ora di chiusura
 	MIN_DURATION = 30, // durata minima di una prenotazione (minuti)
 	MAX_DURATION = 240, // durata massima di una prenotazione (minuti, 4 ore)
+	MAX_CONN = 10
 };
 
 // --- scaglioni orari permessi ---

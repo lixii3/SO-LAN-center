@@ -4,6 +4,8 @@
 #include "../headers/net.h"
 #include "../headers/storage.h"
 #include "../headers/utils.h"
+#include <signal.h>
+#include <sys/wait.h>
 
 #define MAX_ARGS		8	// massimo numero di parole in un comando
 #define MAX_LOGIN_TRIES	3	// al 3o login fallito si chiude la connessione
@@ -28,7 +30,7 @@ typedef struct s_session
 
 // --- server_op.c
 
-t_server	init_server(short port, const char *address, int max_conn);
+t_server	init_server(unsigned short port, const char *address, int max_conn);
 t_session	init_session(int bfd, int ufd);
 const char	*set_role(t_session *session, char *role, int ufd, char	*username);
 const char	*session(int connectSocket, struct sockaddr_in clientAddress);
@@ -40,5 +42,5 @@ const char	*check_cmd(char **argv, int argc, const t_session *s);
 
 // --- handler.c
 
-const char	*handle_cmd(char **cmd, int argc, t_session *session);
+char	*handle_cmd(char **cmd, int argc, t_session *session);
 #endif
