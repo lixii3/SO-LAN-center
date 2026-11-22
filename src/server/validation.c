@@ -218,6 +218,8 @@ const char	*check_cmd(char **argv, int argc, const t_session *s)
 		return (ERR_NOT_LOGGED);
 	if (s->role && strcmp(argv[0], CMD_LOGIN) == 0)
 		return (ERR_ALREADY_LOGGED);
+	if (!s->role && strcmp(argv[0], CMD_LOGIN) == 0 && s->failed_logins >= 3)
+		return (ERR_TOO_MANY_ATTEMPTS);
 	if (is_admin_cmd(argv[0]))
 	{
 		is_admin = (strcmp(s->role, ROLE_ADMIN) == 0);

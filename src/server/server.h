@@ -16,7 +16,7 @@ typedef	struct s_server
 {
 	int					socket;
 	struct sockaddr_in	address;
-} t_server;;
+} t_server;
 
 
 typedef struct s_session
@@ -28,12 +28,13 @@ typedef struct s_session
 	int			failed_logins;
 }	t_session;
 
-// --- server_op.c
+// --- session.c
 
 t_server	init_server(unsigned short port, const char *address, int max_conn);
 t_session	init_session(int bfd, int ufd);
 const char	*set_role(t_session *session, char *role, int ufd, char	*username);
 const char	*session(int connectSocket, struct sockaddr_in clientAddress);
+void		clear_session(t_session *session);
 
 // --- validation.c: validazione dei comandi ---
 

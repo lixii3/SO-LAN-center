@@ -97,8 +97,8 @@ static void	intHandler(int sig)
 // ritorna 0 se ok, -1 altrimenti
 static int	check_data_files(void)
 {
-	const char	*paths[] = {BOOKINGS_PATH, USERS_PATH};
-	const char	*headers[] = {HEADER_BOOKING, HEADER_USERS};
+	const char	*paths[] = {BOOKINGS_PATH, USERS_PATH, STATIONS_PATH};
+	const char	*headers[] = {HEADER_BOOKING, HEADER_USERS, HEADER_STATIONS};
 	int			fd;
 	int			i;
 

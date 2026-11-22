@@ -19,6 +19,17 @@ t_session	init_session(int bfd, int ufd)
 	return (session);
 }
 
+void	clear_session(t_session *session)
+{
+	if (!session)
+		return;
+	session->booking_fd = -1;
+	session->users_fd = -1;
+	clear_user(&session->user);
+	session->role = NULL;
+	session->failed_logins = 0;
+}
+
 // imposta il ruolo dell'utente in role. Se role è NULL,
 // il ruolo viene assegnato ricavandolo dal file ufd contenente i login.
 // Ritorna NULL per il successo oppure un codice di errore ERR_NOT_FOUND
@@ -108,10 +119,10 @@ const char	*session(int connectSocket, struct sockaddr_in clientAddress)
 	t_session	session;
 	int			book_fd;
 	int			us_fd;
-	char		*cmd[MAX_ARGS];
+	char		*argv[MAX_ARGS];
 	char		*clientIP;
 	int			returnCode;
-	char	*resp;
+	char		*resp;
 	char		buffer[MAX_LINE];
 	int			argc;
 
@@ -137,13 +148,19 @@ const char	*session(int connectSocket, struct sockaddr_in clientAddress)
 			return (ERR_SERVER);
 		else
 		{
-			if ((argc = split_cmd(buffer, cmd)) <= 0)
+			if ((argc = split_cmd(buffer, argv)) <= 0)
 			{
 				send_line(connectSocket, RESP_ERR " " ERR_SYNTAX);
 				continue;
 			}
-			resp = handle_cmd(cmd, argc, &session);
+			resp = handle_cmd(argv, argc, &session);
 			send_line(connectSocket, resp);
+			// se viene eseguito un QUIT
+			if (strcmp(resp, RESP_OK " " RESP_BYE) == 0)
+			{
+				free(resp);
+				return (NULL);
+			}
 			free(resp);
 		}
 	}

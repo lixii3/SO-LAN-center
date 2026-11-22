@@ -99,3 +99,12 @@ int	storage_check_credentials(int fd, const char *username,
 		*is_admin = user.is_admin;
 	return (0);
 }
+
+void	clear_user(t_user *user)
+{
+	if (!user)
+		return;
+	bzero(user->password, MAX_USERNAME);
+	bzero(user->username, MAX_PASSWORD);
+	user->is_admin = 0;
+}

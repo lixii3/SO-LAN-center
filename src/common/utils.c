@@ -127,3 +127,35 @@ int	copy_str(char *dst, const char *src, size_t size)
 	memcpy(dst, src, len + 1);
 	return (0);
 }
+
+char	*strjoin(char const *s1, char const *s2)
+{
+	size_t	s1len;
+	size_t	s2len;
+	char	*join;
+	size_t	i;
+
+	// NULL vale come stringa vuota (strlen(NULL) andrebbe in crash)
+	if (!s1)
+		s1 = "";
+	if (!s2)
+		s2 = "";
+	s1len = strlen(s1);
+	s2len = strlen(s2);
+	join = (char *) malloc((s1len + s2len + 1) * sizeof(char));
+	if (!join)
+		return (NULL);
+	i = 0;
+	while (i < s1len)
+	{
+		join[i] = s1[i];
+		i++;
+	}
+	while (i < s2len + s1len)
+	{
+		join[i] = s2[i - s1len];
+		i++;
+	}
+	join[i] = 0;
+	return (join);
+}

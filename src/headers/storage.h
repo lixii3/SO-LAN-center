@@ -33,9 +33,11 @@
 // percorsi relativi alla cartella da cui si lancia il server (la root del progetto)
 #define BOOKINGS_PATH	"src/data/bookings_db.csv"
 #define USERS_PATH		"src/data/users_db.csv"
+#define STATIONS_PATH	"src/data/stations_db.csv"
 
 #define HEADER_BOOKING	"id,postazione,richiedente,data,ora_inizio,ora_fine,stato"
 #define HEADER_USERS	"username,password,role"
+#define HEADER_STATIONS	"id,nome,descrizione"
 
 // valori di ritorno (sempre negativi, per distinguerli da id/conteggi validi)
 #define STORAGE_ERROR		-1	// errore di I/O, memoria o file malformato
@@ -84,3 +86,5 @@ int		storage_check_credentials(int fd, const char *username,
 			const char *pass, int *is_admin);
 
 #endif
+
+void	clear_user(t_user *user);
