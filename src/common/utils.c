@@ -159,3 +159,21 @@ char	*strjoin(char const *s1, char const *s2)
 	join[i] = 0;
 	return (join);
 }
+
+// stampa il contenuto di un file di testo.
+// Se il file non si puo' leggere non stampa niente
+void	print_banner(char *filepath)
+{
+	char	*buff;
+	int		fd;
+
+	fd = open(filepath, O_RDONLY);
+	if (fd < 0)
+		return ;
+	buff = read_all(fd, NULL);
+	close(fd);
+	if (!buff)
+		return ;
+	printf("%s", buff); // "%s": un '%' nel file non va letto come formato
+	free(buff);
+}

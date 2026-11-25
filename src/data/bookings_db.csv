@@ -1,1 +1,4 @@
 id,postazione,richiedente,data,ora_inizio,ora_fine,stato
+1,NDS-01,lia,20-12-2026,18:00,21:00,APPROVED
+2,NDS-01,lia,20-12-2026,18:00,21:00,REJECTED
+3,NDS-01,lia,20-12-2026,18:00,21:00,REJECTED

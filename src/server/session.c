@@ -7,15 +7,15 @@ t_session	init_session(int bfd, int ufd)
 {
 	t_session	session;
 
-	session.failed_logins = -1;
-	if (bfd < 0 || ufd < 0)
-		return session;
+	// anche in caso di errore tutti i campi devono avere un valore
 	session.booking_fd = bfd;
 	session.users_fd = ufd;
 	session.role = NULL;
-	bzero(session.user.username, MAX_USERNAME);
-	bzero(session.user.password, MAX_PASSWORD);
+	clear_user(&session.user);
 	session.failed_logins = 0;
+	session.quit = 0;
+	if (bfd < 0 || ufd < 0)
+		session.failed_logins = -1;
 	return (session);
 }
 
@@ -28,33 +28,7 @@ void	clear_session(t_session *session)
 	clear_user(&session->user);
 	session->role = NULL;
 	session->failed_logins = 0;
-}
-
-// imposta il ruolo dell'utente in role. Se role è NULL,
-// il ruolo viene assegnato ricavandolo dal file ufd contenente i login.
-// Ritorna NULL per il successo oppure un codice di errore ERR_NOT_FOUND
-// o ERR_SYNTAX se il ruolo passato non è valido.
-const char	*set_role(t_session *session, char *role, int ufd, char	*username)
-{
-	if (!session)
-		return (ERR_SERVER);
-	if (role)
-	{
-		if (strcmp(role, ROLE_ADMIN) == 0)
-			session->role = ROLE_ADMIN;
-		else if (strcmp(role, ROLE_USER) == 0)
-			session->role = ROLE_USER;
-		else
-			return (ERR_SYNTAX);
-		return (NULL);
-	}
-	if (storage_find_user(ufd, username, &session->user) != 0)
-		return (ERR_NOT_FOUND);
-	if (session->user.is_admin)
-		session->role = ROLE_ADMIN;
-	else
-		session->role = ROLE_USER;
-	return (NULL);
+	session->quit = 0;
 }
 
 // inizializza un server. Esegue anche il bind() e listen() con max_conn.
@@ -110,9 +84,24 @@ t_server	init_server(unsigned short port, const char *address, int max_conn)
 	return (server);
 }
 
+// chiude tutto quello che la sessione ha aperto (exec_quit potrebbe aver gia'
+// chiuso i file: in quel caso valgono -1) e ritorna err
+static const char	*end_session(t_session *session, int connectSocket,
+	const char *clientIP, const char *err)
+{
+	if (session->booking_fd >= 0)
+		close(session->booking_fd);
+	if (session->users_fd >= 0)
+		close(session->users_fd);
+	clear_session(session);
+	close(connectSocket);
+	printf("Client @ %s disconnected\n", clientIP);
+	return (err);
+}
+
 // Gestisce la sessione, chiama handle_cmd per
-// eseguire il comando ricevuto dal client connsesso.
-// Ritorna NULL se il client chiude la sessione regolareìmente,
+// eseguire il comando ricevuto dal client connesso.
+// Ritorna NULL se il client chiude la sessione regolarmente,
 // oppure un codice di errore ERR_.
 const char	*session(int connectSocket, struct sockaddr_in clientAddress)
 {
@@ -126,15 +115,18 @@ const char	*session(int connectSocket, struct sockaddr_in clientAddress)
 	char		buffer[MAX_LINE];
 	int			argc;
 
+	// memorizzo l'indirizzo del client in formato dots
+	clientIP = inet_ntoa(clientAddress.sin_addr);
+	printf("\nClient @ %s connects on socket %d\n", clientIP, connectSocket);
 	book_fd = storage_open(BOOKINGS_PATH, HEADER_BOOKING);
 	us_fd = storage_open(USERS_PATH, HEADER_USERS);
 	session = init_session(book_fd, us_fd);
 	if (session.failed_logins < 0)
-		return (ERR_SERVER);
-	// memorizzo l'indirizzo del client in formato dots
-	clientIP = inet_ntoa(clientAddress.sin_addr);
-	printf("\nClient @ %s connects on socket %d\n", clientIP, connectSocket);
-		// riceve i messaggi
+	{
+		send_line(connectSocket, RESP_ERR " " ERR_SERVER);
+		return (end_session(&session, connectSocket, clientIP, ERR_SERVER));
+	}
+	// riceve i messaggi
 	while (1)
 	{
 		returnCode = recv_line(connectSocket, buffer, MAX_LINE);
@@ -143,9 +135,9 @@ const char	*session(int connectSocket, struct sockaddr_in clientAddress)
 		else if (returnCode == NET_EMPTY_LINE)
 			send_line(connectSocket, RESP_ERR " " ERR_SYNTAX);
 		else if (returnCode == NET_CLOSED)
-			return (NULL);
+			return (end_session(&session, connectSocket, clientIP, NULL));
 		else if (returnCode == NET_ERROR)
-			return (ERR_SERVER);
+			return (end_session(&session, connectSocket, clientIP, ERR_SERVER));
 		else
 		{
 			if ((argc = split_cmd(buffer, argv)) <= 0)
@@ -154,14 +146,14 @@ const char	*session(int connectSocket, struct sockaddr_in clientAddress)
 				continue;
 			}
 			resp = handle_cmd(argv, argc, &session);
-			send_line(connectSocket, resp);
-			// se viene eseguito un QUIT
-			if (strcmp(resp, RESP_OK " " RESP_BYE) == 0)
-			{
-				free(resp);
-				return (NULL);
-			}
+			if (resp)
+				send_line(connectSocket, resp);
+			else // memoria esaurita: il client deve comunque ricevere una risposta
+				send_line(connectSocket, RESP_ERR " " ERR_SERVER);
 			free(resp);
+			// QUIT oppure troppi login falliti
+			if (session.quit)
+				return (end_session(&session, connectSocket, clientIP, NULL));
 		}
 	}
 }

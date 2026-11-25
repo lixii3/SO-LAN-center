@@ -19,6 +19,7 @@ non deve aspettarsela e il server non deve inviarla.
 - Il dialogo è sempre **richiesta → risposta**: il client invia un comando,
   il server risponde, e solo allora il client può inviare il comando successivo.
   Il server non invia mai messaggi spontaneamente.
+- Anche una **riga vuota** è una richiesta: riceve `ERR SYNTAX`.
 
 ### Formato delle risposte
 
@@ -41,7 +42,7 @@ ERR <CODICE> [messaggio]
 |-------------|----------------|--------------|------|
 | data        | `GG-MM-AAAA`   | `20-12-2026` | le date si confrontano convertendole in `t_date` (non con `strcmp`, che metterebbe il 20-12-2026 dopo l'01-01-2027) |
 | ora         | `HH:MM`        | `18:30`      | minuti solo `00` o `30`, da `00:00` a `23:59` (`24:00` non e' valido) |
-| postazione  | `TIPO-NN`      | `PC-03`      | tipi: `PC`, `PS5`, `XBOX`, `SWITCH` |
+| postazione  | `SIGLA-NN`     | `PC-03`      | l'elenco, con il tipo di ogni postazione, si ottiene con `STATIONS` |
 | stato       | parola         | `PENDING`    | `PENDING`, `APPROVED`, `REJECTED` |
 | ID          | intero > 0     | `17`         | assegnato dal server |
 
@@ -110,8 +111,8 @@ C: STATIONS
 S: OK 4
 S: STATION PC-01 PC
 S: STATION PC-02 PC
-S: STATION PS5-1 PS5
-S: STATION SWITCH-1 SWITCH
+S: STATION PS5-01 PS5
+S: STATION NDS-01 NintendoDS
 ```
 
 ### `BOOK <postazione> <data> <inizio> <fine>`
@@ -125,7 +126,7 @@ Crea una nuova richiesta di prenotazione, che parte nello stato `PENDING`.
 | `ERR NO_SUCH_STATION` | la postazione non esiste |
 | `ERR INVALID_DATE` | data inesistente (es. `30-02-2026`) o nel passato |
 | `ERR INVALID_TIME` | ora non valida, fuori orario, `fine <= inizio`, durata non ammessa |
-| `ERR CONFLICT <id>` | si sovrappone alla prenotazione **APPROVED** `<id>` |
+| `ERR CONFLICT [id]` | si sovrappone a una prenotazione **APPROVED**. L'`id` è presente solo se chi prenota è admin: a un utente standard non si rivela quale prenotazione altrui è in conflitto |
 
 > **Politica sui conflitti.** Una richiesta che si sovrappone a una prenotazione
 > **approvata** viene rifiutata subito (`ERR CONFLICT`). Una richiesta che si
@@ -152,7 +153,7 @@ I filtri hanno la forma `chiave=valore` e si possono combinare (condizione AND):
 C: MY date=20-12-2026
 S: OK 2
 S: BOOKING 17 PC-03 20-12-2026 18:00 21:00 mario PENDING
-S: BOOKING 21 PS5-1 20-12-2026 21:00 22:00 mario APPROVED
+S: BOOKING 21 PS5-01 20-12-2026 21:00 22:00 mario APPROVED
 ```
 
 Errori: `ERR SYNTAX` (filtro scritto male o chiave sconosciuta).

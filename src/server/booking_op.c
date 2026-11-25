@@ -1,4 +1,5 @@
 #include "../headers/storage.h"
+#include <signal.h>
 
 // --- funzioni di supporto (solo per questo file) -----------------------------
 
@@ -46,9 +47,8 @@ static t_booking	*load_all(int fd, int *count)
 }
 
 // riscrive tutto il file: intestazione + una riga per prenotazione.
-// ritorna 0 se ok, -1 in caso di errore.
-// DA CHIAMARE CON IL LOCK IN SCRITTURA GIA' PRESO.
-static int	save_all(int fd, const t_booking *arr, int count)
+// ritorna 0 se ok, -1 in caso di errore. Usata solo da save_all.
+static int	write_records(int fd, const t_booking *arr, int count)
 {
 	char	buf[MAX_LINE];
 	int		i;
@@ -64,6 +64,30 @@ static int	save_all(int fd, const t_booking *arr, int count)
 		i++;
 	}
 	return (0);
+}
+
+// salva l'archivio con write_records, rimandando i segnali di terminazione.
+// Tra lo svuotamento del file e l'ultima scrittura l'archivio e' incompleto: se
+// il processo venisse terminato qui (es. CTRL-C) si perderebbero prenotazioni.
+// Un segnale bloccato non va perso: viene consegnato quando si ripristina la
+// maschera, cioe' a file completo.
+// ritorna 0 se ok, -1 in caso di errore.
+// DA CHIAMARE CON IL LOCK IN SCRITTURA GIA' PRESO.
+static int	save_all(int fd, const t_booking *arr, int count)
+{
+	sigset_t	blocked;
+	sigset_t	old;
+	int			ret;
+
+	sigemptyset(&blocked);
+	sigaddset(&blocked, SIGINT);
+	sigaddset(&blocked, SIGTERM);
+	sigaddset(&blocked, SIGHUP); // chiusura del terminale
+	if (sigprocmask(SIG_BLOCK, &blocked, &old) == -1)
+		return (-1);
+	ret = write_records(fd, arr, count);
+	sigprocmask(SIG_SETMASK, &old, NULL);
+	return (ret);
 }
 
 // posizione nell'array della prenotazione con quell'id, -1 se non c'e'

@@ -3,7 +3,6 @@
 
 #include "./structs.h"
 #include "./utils.h"
-#include <fcntl.h>
 #include <errno.h>
 #include <sys/stat.h>
 
@@ -21,6 +20,7 @@
 **                    apertura, lock, lettura riga per riga, riscrittura
 **   booking_op.c  -> operazioni sul file delle prenotazioni
 **   user_op.c     -> operazioni sul file degli utenti
+**   stations.c    -> operazioni sul file delle postazioni
 **
 ** Ogni operazione prende un lock sul file con fcntl() per tutta la sua durata
 ** (in scrittura per le modifiche, in lettura per le consultazioni). Cosi' piu'
@@ -37,7 +37,7 @@
 
 #define HEADER_BOOKING	"id,postazione,richiedente,data,ora_inizio,ora_fine,stato"
 #define HEADER_USERS	"username,password,role"
-#define HEADER_STATIONS	"id,nome,descrizione"
+#define HEADER_STATIONS	"id,tipo"
 
 // valori di ritorno (sempre negativi, per distinguerli da id/conteggi validi)
 #define STORAGE_ERROR		-1	// errore di I/O, memoria o file malformato
@@ -55,13 +55,13 @@ typedef struct s_lines
 	int		count;
 }	t_lines;
 
-int		storage_open(const char *path, const char *header);
-int		lock_file(int fd, short type);
-void	unlock_file(int fd);
-int		storage_read_lines(int fd, const char *header, t_lines *out);
-void	storage_free_lines(t_lines *l);
-int		storage_rewrite(int fd, const char *header);
-int		storage_write_line(int fd, const char *line);
+int			storage_open(const char *path, const char *header);
+int			lock_file(int fd, short type);
+void		unlock_file(int fd);
+int			storage_read_lines(int fd, const char *header, t_lines *out);
+void		storage_free_lines(t_lines *l);
+int			storage_rewrite(int fd, const char *header);
+int			storage_write_line(int fd, const char *line);
 
 // --- booking_op.c: operazioni su bookings ------------------------------------
 
@@ -72,6 +72,11 @@ int			storage_find_booking(int fd, int booking_id, t_booking *out);
 int			storage_set_booking_status(int fd, int booking_id,
 				enum e_status new_status, int *conflict_id);
 
+// --- stations.c --------------------------------------------------------------
+int			station_row(const char *csv, char *row, size_t size);
+int			storage_read_stations(t_lines *out);
+int			storage_find_station(const char *id);
+
 // --- user_op.c: operazioni su users ------------------------------------------
 
 typedef struct s_user
@@ -81,10 +86,8 @@ typedef struct s_user
 	int		is_admin;
 }	t_user;
 
-int		storage_find_user(int fd, const char *username, t_user *out);
-int		storage_check_credentials(int fd, const char *username,
-			const char *pass, int *is_admin);
-
+int			storage_find_user(int fd, const char *username, t_user *out);
+int			storage_check_credentials(int fd, const char *username,
+				const char *pass, int *is_admin);
+void		clear_user(t_user *user);
 #endif
-
-void	clear_user(t_user *user);

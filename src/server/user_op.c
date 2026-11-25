@@ -104,7 +104,7 @@ void	clear_user(t_user *user)
 {
 	if (!user)
 		return;
-	bzero(user->password, MAX_USERNAME);
-	bzero(user->username, MAX_PASSWORD);
+	bzero(user->password, MAX_PASSWORD);
+	bzero(user->username, MAX_USERNAME);
 	user->is_admin = 0;
 }

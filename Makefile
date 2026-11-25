@@ -16,8 +16,8 @@ COM_SRC = net.c time.c booking.c utils.c
 
 # file esclusivi
 SRV_SRC = server.c validation.c session.c storage.c\
-		  booking_op.c user_op.c handler.c
-CLI_SRC = client.c
+		  booking_op.c user_op.c stations.c handler.c
+CLI_SRC = client.c request.c input.c ui.c menu.c
 
 # --- Oggetti -----------------------------------------------------------------
 COM_OBJ    = $(addprefix $(OBJ_DIR)/common/, $(COM_SRC:.c=.o))
@@ -42,10 +42,11 @@ $(SERVER_NAME): $(SERVER_OBJ)
 $(CLIENT_NAME): $(CLIENT_OBJ)
 	$(CC) $(CFLAGS) $^ -o $@
 
-# Compila
+# Compila. -MMD scrive accanto a ogni .o un file .d con gli header che usa:
+# cosi' modificando un .h si ricompilano i .c che lo includono
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -MMD -c $< -o $@
 
 $(TEST_NAME): $(TEST_OBJ)
 	$(CC) $(CFLAGS) $^ -o $@
@@ -57,13 +58,15 @@ test: $(TEST_NAME)
 run-server: $(SERVER_NAME)
 	./$(SERVER_NAME)
 
-# uso: make run-client MSG="hello world"
-MSG ?= hello world
+# uso: make run-client [IP=192.168.1.10]
+IP ?= 127.0.0.1
 run-client: $(CLIENT_NAME)
-	./$(CLIENT_NAME) "$(MSG)"
+	./$(CLIENT_NAME) $(IP)
 
 valgrind: $(SERVER_NAME)
 	valgrind --leak-check=full --show-leak-kinds=all --trace-children=yes ./$(SERVER_NAME)
+
+-include $(wildcard $(OBJ_DIR)/*/*.d)
 
 # Cancella i file oggetto
 clean:

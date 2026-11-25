@@ -26,13 +26,13 @@ typedef struct s_session
 	t_user		user;
 	const char	*role; // NULL = non loggato, altrimenti ROLE_USER o ROLE_ADMIN
 	int			failed_logins;
+	int			quit; // 1 = session() deve chiudere la connessione
 }	t_session;
 
 // --- session.c
 
 t_server	init_server(unsigned short port, const char *address, int max_conn);
 t_session	init_session(int bfd, int ufd);
-const char	*set_role(t_session *session, char *role, int ufd, char	*username);
 const char	*session(int connectSocket, struct sockaddr_in clientAddress);
 void		clear_session(t_session *session);
 

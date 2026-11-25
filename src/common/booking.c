@@ -104,6 +104,31 @@ int	booking_to_csv(const t_booking *booking, char *buf, size_t size)
 	return (len);
 }
 
+// scrive in buf la riga del protocollo (senza '\n'):
+//   BOOKING 17 PC-03 20-12-2026 18:00 21:00 mario PENDING
+// ritorna la lunghezza della riga, -1 se buf e' troppo piccolo o lo stato e' invalido
+int	booking_to_row(const t_booking *booking, char *buf, size_t size)
+{
+	const char	*status;
+	char		date[DATE_LEN];
+	char		start[TIME_LEN];
+	char		end[TIME_LEN];
+	int			len;
+
+	status = status_to_str(booking->status);
+	if (!status)
+		return (-1);
+	len = snprintf(buf, size, "BOOKING %d %s %s %s %s %s %s",
+			booking->id, booking->station,
+			date_to_str(&booking->date, date),
+			time_to_str(&booking->start_time, start),
+			time_to_str(&booking->end_time, end),
+			booking->username, status);
+	if (len < 0 || (size_t)len >= size) // snprintf ha dovuto troncare
+		return (-1);
+	return (len);
+}
+
 // campi di una riga CSV dei bookings
 enum e_csv_field
 {

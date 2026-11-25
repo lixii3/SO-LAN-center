@@ -1,7 +1,7 @@
-id,nome,descrizione
-1,nds,nintendo ds
-2,pc-01,postazione pc
-3,pc-03,postazione pc
-4,ps5-01,ps5
-5,ps5-02, ps5
-6,wii-01, nintendo wii
+id,tipo
+NDS-01,NintendoDS
+PS5-01,PS5
+PS5-02,PS5
+PC-01,PC
+PC-02,PC
+PC-03,PC

@@ -99,11 +99,13 @@ static int	check_data_files(void)
 {
 	const char	*paths[] = {BOOKINGS_PATH, USERS_PATH, STATIONS_PATH};
 	const char	*headers[] = {HEADER_BOOKING, HEADER_USERS, HEADER_STATIONS};
+	int			npaths;
 	int			fd;
 	int			i;
 
 	i = 0;
-	while (i < 2)
+	npaths = 3;
+	while (i < npaths)
 	{
 		fd = storage_open(paths[i], headers[i]);
 		if (fd < 0)

@@ -61,6 +61,7 @@ const char	*status_to_str(enum e_status status);
 int			str_to_status(const char *str, enum e_status *status);
 int			booking_overlaps(const t_booking *a, const t_booking *b);
 int			booking_to_csv(const t_booking *booking, char *buf, size_t size);
+int			booking_to_row(const t_booking *booking, char *buf, size_t size);
 int			booking_from_csv(const char *line, t_booking *booking);
 
 #endif
