@@ -10,6 +10,17 @@
 #define R_USER	2
 #define R_ADMIN	4
 
+// stili ANSI: usarli sempre attraverso col(), vedi ui.c
+#define C_RESET		"\033[0m"
+#define C_BOLD		"\033[1m"
+#define C_RED		"\033[31m"
+#define C_GREEN		"\033[32m"
+#define C_YELLOW	"\033[33m"
+
+// stampa
+#define BANNER_PATH "src/data/banner.txt"
+#define WELCOME_PATH "src/data/welcome.txt"
+
 // ritorno di input e azioni (prefisso diverso da CMD_, gia' usato dal protocollo)
 #define RET_OK		0
 #define RET_CANCEL	1	// campo vuoto: torna al menu
@@ -55,5 +66,14 @@ int		ask_date(const char *label, char *buf);
 int		ask_time(const char *label, char *buf);
 int		ask_id(const char *label, int *id);
 int		ask_status(const char *label, const char **status);
+
+// --- ui.c: stampa a schermo ---
+
+const char	*col(const char *code);
+void		print_banner(const char *filepath);
+void		clear_screen(void);
+int			wait_enter(void);
+void		print_error(const t_resp *r);
+void		print_bookings(const t_resp *r);
 
 #endif
